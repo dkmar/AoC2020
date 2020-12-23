@@ -5,6 +5,8 @@ const hash_map = std.hash_map;
 const math = std.math;
 const meta = std.meta;
 
+// *****************************************************************************
+
 pub fn splitToInts(comptime T: type, allocator: *mem.Allocator, 
                    buffer: []const u8, delim: []const u8
 ) ![]T {
@@ -31,6 +33,8 @@ test "split ints" {
     std.testing.expectEqualSlices(u16, &[_]u16{123, 456}, ints);
 }
 
+// *****************************************************************************
+
 pub fn HashSet(comptime K: type) type {
     return std.HashMap(
        K, void, 
@@ -40,9 +44,31 @@ pub fn HashSet(comptime K: type) type {
     );
 }
 
+// *****************************************************************************
+
 pub fn xor(a: bool, b: bool) bool {
     return (a and !b) or (b and !a);
 }
+
+// *****************************************************************************
+/// inspired by: https://github.com/ziglang/zig/issues/793
+pub fn EnumArray(comptime T: type, comptime U: type) type {
+    return struct {
+        data: [std.meta.fields(T).len]U,
+
+        pub fn get(self: *@This(), tag: T) U {
+            return self.data[@enumToInt(T)];
+            // return self.data[std.meta.fieldIndex(T, std.meta.tagName(tag))];
+        }
+
+        pub fn set(self: *@This(), tag: T, value: U) void {
+            self.data[@enumToInt(T)] = value;
+            // self.data[std.meta.fieldIndex(T, std.meta.tagName(tag))] = value;
+        }
+    };
+}
+
+// *****************************************************************************
 
 pub fn sort(comptime T: type, allocator: *mem.Allocator, src: []T) !void {
     const aux = try allocator.alloc(T, src.len);
@@ -138,3 +164,7 @@ fn bit_span(comptime T: type,
     const mask = math.maxInt(BitSpan);
     return @intCast(BitSpan, (value >> offset) & mask);
 }
+
+// *****************************************************************************
+
+
