@@ -56,16 +56,32 @@ pub fn EnumArray(comptime T: type, comptime U: type) type {
     return struct {
         data: [std.meta.fields(T).len]U,
 
-        pub fn get(self: *@This(), tag: T) U {
-            return self.data[@enumToInt(T)];
+        pub fn get(self: *const @This(), tag: T) U {
+            return self.data[@enumToInt(tag)];
             // return self.data[std.meta.fieldIndex(T, std.meta.tagName(tag))];
         }
 
         pub fn set(self: *@This(), tag: T, value: U) void {
-            self.data[@enumToInt(T)] = value;
+            self.data[@enumToInt(tag)] = value;
             // self.data[std.meta.fieldIndex(T, std.meta.tagName(tag))] = value;
         }
     };
+}
+
+test "EnumArray" {
+    const Weekdays = enum(usize) {
+        monday,
+        tuesday,
+        wednesday, 
+        thursday,
+        friday
+    };
+
+    var map = EnumArray(Weekdays, bool){.data = [_]bool{false} ** std.meta.fields(Weekdays).len};
+    std.debug.print("\nEnumArray.get(.monday): {}\n", .{map.get(Weekdays.monday)});
+    map.set(.monday, true);
+    std.debug.print("\nEnumArray.get(.monday): {}\n", .{map.get(.monday)});
+
 }
 
 // *****************************************************************************
