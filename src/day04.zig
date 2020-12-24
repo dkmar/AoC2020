@@ -18,7 +18,7 @@ const PassportField = enum(usize) {
     cid
 };
 
-fn part1(comptime n_fields: usize, map: anytype) void {
+fn part1(comptime n_fields: usize, comptime map: anytype) void {
     var valid: u16 = 0;
     var it = std.mem.split(input, "\n\n");
     while (it.next()) |passport| {
@@ -43,7 +43,7 @@ fn part1(comptime n_fields: usize, map: anytype) void {
     print("part1: {}\n", .{valid});
 }
 
-fn part2(comptime n_fields: usize, map: anytype) void {
+fn part2(comptime n_fields: usize, comptime map: anytype) void {
     var valid: u16 = 0;
     var it = mem.split(input, "\n\n");
     while (it.next()) |passport| {
@@ -70,7 +70,7 @@ fn part2(comptime n_fields: usize, map: anytype) void {
             for (is_present[0..@enumToInt(PassportField.cid)]) |s| { if (s) n += 1; }
             break :blk n;
         };
-
+        // if all fields but cid (which we didn't check for) are present, this is a valid passport.
         if (fields_present == (n_fields - 1)) {
             valid += 1;
         }
