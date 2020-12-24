@@ -86,6 +86,7 @@ test "EnumArray" {
 
 // *****************************************************************************
 
+// heavily referenced the radix sort here: https://github.com/Snektron/aoc20/blob/master/src/aoc.zig
 pub fn sort(comptime T: type, allocator: *mem.Allocator, src: []T) !void {
     const aux = try allocator.alloc(T, src.len);
     defer allocator.free(aux);
@@ -114,27 +115,6 @@ pub fn radixSort(comptime T: type,
         mem.copy(T, src, aux);
     }
 } 
-
-const asc_u32 = std.sort.asc(u32);
-test "radix sort" {
-    var allocator = std.testing.allocator;
-
-    var src = [_]u32{18, 421, 6, 5888, 1991, 10, 0};
-
-    var src_cpy = try allocator.alloc(u32, src.len);
-    defer allocator.free(src_cpy);
-    mem.copy(u32, src_cpy[0..], src[0..]);
-
-    std.testing.expectEqualSlices(u32, src[0..], src_cpy[0..]);
-
-    const aux = try allocator.alloc(u32, src.len);
-    defer allocator.free(aux);
-
-    radixSort(u32, 4, src[0..], aux[0..]);
-    std.sort.sort(u32, src_cpy[0..], {}, asc_u32);
-
-    std.testing.expectEqualSlices(u32, src[0..], src_cpy[0..]);
-}
 
 /// Sort src into dst
 fn countingSort(comptime T: type,
@@ -179,6 +159,27 @@ fn bit_span(comptime T: type,
     const BitSpan = meta.Int(.unsigned, bits_per_bin);
     const mask = math.maxInt(BitSpan);
     return @intCast(BitSpan, (value >> offset) & mask);
+}
+
+const asc_u32 = std.sort.asc(u32);
+test "radix sort" {
+    var allocator = std.testing.allocator;
+
+    var src = [_]u32{18, 421, 6, 5888, 1991, 10, 0};
+
+    var src_cpy = try allocator.alloc(u32, src.len);
+    defer allocator.free(src_cpy);
+    mem.copy(u32, src_cpy[0..], src[0..]);
+
+    std.testing.expectEqualSlices(u32, src[0..], src_cpy[0..]);
+
+    const aux = try allocator.alloc(u32, src.len);
+    defer allocator.free(aux);
+
+    radixSort(u32, 4, src[0..], aux[0..]);
+    std.sort.sort(u32, src_cpy[0..], {}, asc_u32);
+
+    std.testing.expectEqualSlices(u32, src[0..], src_cpy[0..]);
 }
 
 // *****************************************************************************
