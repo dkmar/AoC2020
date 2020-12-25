@@ -21,11 +21,11 @@ pub fn main() !void {
     }
     print("part1: {}\n", .{max});
 
+    // find the only unoccupied seat
     const seat = blk: {
-        for (seat_taken[min .. max]) |taken, i| {
-            if (!taken) break :blk (min + @intCast(u10, i));
-        }
-        unreachable;
+        var id: u10 = min;
+        while (seat_taken[id]) id += 1;
+        break :blk id;
     };
     print("part2: {}\n", .{seat});
 }
