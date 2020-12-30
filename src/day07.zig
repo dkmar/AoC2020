@@ -5,10 +5,10 @@ const assert = std.debug.assert;
 const print = std.debug.print;
 const input = @embedFile("../in/day07.txt");
 
-const AdjacencyList = std.hash_map.StringHashMap(Bag);
+const AdjacencyList = std.hash_map.StringHashMap(Bag1);
 const List          = std.ArrayList([]const u8);
 const Queue         = std.fifo.LinearFifo([]const u8, .Dynamic);
-const Bag = struct {
+const Bag1 = struct {
     is_connected: bool = false,
     edges: List
 };
@@ -29,6 +29,75 @@ pub fn main() !void {
 
     const count = try countConnectedNodes(allocator, graph);
     print("part1: {}\n", .{count});
+    
+    try part2(allocator);
+}
+
+const Bag = struct {
+    const NestedBag = struct {color: []const u8, quantity: u3};
+    color: []const u8,
+    contains: []NestedBag
+};
+
+fn part2(ally: *mem.Allocator) !void {
+    const bags = try parse(ally);
+    var map = std.StringHashMap(Bag).init(ally);
+    for (bags) |bag| try map.put(bag.color, bag);
+
+    var next_bag: []const u8 = "shiny gold";
+    
+    const counter = struct {
+        bag_map: std.StringHashMap(Bag),
+        pub fn countBags(self: @This(), src: []const u8) u16 {
+            var count: u16 = 0;
+            const inner = self.bag_map.get(src) orelse unreachable;
+            for (inner.contains) |nested_bag| {
+                count += nested_bag.quantity 
+                       + nested_bag.quantity * self.countBags(nested_bag.color);
+            }
+            return count;
+        }
+    };
+
+    const c = counter{.bag_map = map};
+    const total = c.countBags("shiny gold");
+
+    print("part2: {}\n", .{total});
+}
+
+/// Example:
+/// --------
+/// 'light violet bags contain 3 pale beige bags, 2 mirrored silver bags.'
+fn parse(ally: *mem.Allocator) ![]Bag {
+    var bags = std.ArrayList(Bag).init(ally);
+    errdefer bags.deinit();
+
+    var it = mem.tokenize(input, ".\n"); 
+    while (it.next()) |rule| {
+        const main_bag = parseBagBlk: {
+            const end = mem.indexOf(u8, rule, " bags") orelse unreachable;
+            break :parseBagBlk rule[0..end];
+        };
+        const nested_bags = parseNestedBlk: {
+            var list = std.ArrayList(Bag.NestedBag).init(ally);
+            if (mem.eql(u8, rule[main_bag.len..], " bags contain no other bags")) {
+                break :parseNestedBlk list.toOwnedSlice(); // []NestedBag
+            }
+            var nested_it = mem.split(rule[main_bag.len+14..], ", ");
+            while (nested_it.next()) |bag_info| {
+                const quantity = try std.fmt.parseUnsigned(u3, bag_info[0..1], 10);
+                const end_offset = 4 + @as(usize, @boolToInt(quantity > 1)); // _bag[s]
+                try list.append(Bag.NestedBag{
+                    .quantity = quantity,
+                    .color = bag_info[2..bag_info.len-end_offset]
+                });
+            }
+            break :parseNestedBlk list.toOwnedSlice(); // []NestedBag
+        };
+        try bags.append(Bag{.color = main_bag, .contains = nested_bags});
+    }
+
+    return bags.toOwnedSlice(); // []Bag
 }
 
 fn buildInvertedGraph(allocator: *mem.Allocator) !AdjacencyList {
@@ -57,12 +126,12 @@ fn buildInvertedGraph(allocator: *mem.Allocator) !AdjacencyList {
 
         // ensure that an entry will exist for each vertex.
         if (!graph.contains(v)) {
-            try graph.put(v, Bag{.edges = List.init(allocator)});
+            try graph.put(v, Bag1{.edges = List.init(allocator)});
         }
 
         // assemble inversion
         for (edges) |e| {
-            const res = try graph.getOrPutValue(e, Bag{.edges = List.init(allocator)});
+            const res = try graph.getOrPutValue(e, Bag1{.edges = List.init(allocator)});
             try res.value.edges.append(v);
         }
     }
